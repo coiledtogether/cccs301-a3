@@ -17,19 +17,20 @@ class BookingSystemTest {
         for (int i = 0; i < 1000; i++) {
 
             // Checks if getRandomNumberOfRooms() returned an out of bounds value.
-            if (BookingSystem.getRandomNumberOfRooms() < 5 || BookingSystem.getRandomNumberOfRooms() > 50) {
+            assertTrue (BookingSystem.getRandomNumberOfRooms() < 5 || BookingSystem.getRandomNumberOfRooms() > 50);
 
-                // Test fails if so.
-                fail();
-                return;
-            }
         }
+    }
 
+    // This is only necessary so that the coverage report stops thinking I forgot to cover a method in BookingSystem?
+    @Test
+    void bookingSystem_NewBookingSystem_NewBookingSystem() {
+        assertNotNull(new BookingSystem());
     }
 
     @Test
     void createRooms_BookingSystem_3Rooms() {
-        int numRooms = 3;
+        // Make sure that the correct number of rooms are created in the booking system
         assertEquals(3, BookingSystem.createRooms(3).length);
     }
 

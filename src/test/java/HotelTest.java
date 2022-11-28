@@ -16,24 +16,24 @@ import static org.junit.jupiter.api.Assertions.*;
 class HotelTest {
 
     // Output stream to dump console output into. Shared by most methods
-    static ByteArrayOutputStream consoleOutput = new ByteArrayOutputStream();
+    ByteArrayOutputStream consoleOutput = new ByteArrayOutputStream();
 
     // The old system output stream.
     // This is needed to reset the stream after making an assertion based on the console logs
-    static PrintStream oldOut = System.out;
+    PrintStream oldOut = System.out;
 
-    // Evil code to redirect sysout to a byte array that I can read and judge
+    // Evil code to redirect console output to a byte array that I can read and judge
     void captureTheSystemOutput() {
 
         // Reset the byte array
         consoleOutput.reset();
 
-        // This is where sysout will be redirected to
+        // This is where the console output will be redirected to
         PrintStream newOut = new PrintStream(consoleOutput);
         System.setOut(newOut);
     }
 
-    // This flushes the byte array sysout and sets it back to the old sysout
+    // This flushes the byte array console out and sets it back to the old system output
     void releaseTheSystemOutput() {
         System.out.flush();
         System.setOut(oldOut);
@@ -52,10 +52,8 @@ class HotelTest {
 
         releaseTheSystemOutput();
 
-        // Test will succeed if we get the proper failure console output
-        if (!(consoleOutput.toString().equals("Sorry nil, we have no available rooms of the desired type.\n"))) {
-            fail();
-        }
+        // Test will fail if a reservation is made
+        assertEquals("Sorry nil, we have no available rooms of the desired type.\n", consoleOutput.toString());
     }
 
     @Test
@@ -71,10 +69,8 @@ class HotelTest {
 
         releaseTheSystemOutput();
 
-        // Test will succeed if we get the proper failure console output
-        if (!(consoleOutput.toString().equals("You have successfully reserved a double room under the name nil. We look forward having you at the cute hotel\n"))) {
-            fail();
-        }
+        // Test will fail if the booking fails
+        assertEquals("You have successfully reserved a double room under the name nil. We look forward having you at the cute hotel\n", consoleOutput.toString());
     }
 
     @Test
@@ -100,10 +96,8 @@ class HotelTest {
 
         releaseTheSystemOutput();
 
-        // Test will succeed if we get the proper failure console output
-        if (!(consoleOutput.toString().equals("Sorry nil, we have no available rooms of the desired type.\n"))) {
-            fail();
-        }
+        // Test will fail if system does not determine that there are no available rooms of a type
+        assertEquals("Sorry nil, we have no available rooms of the desired type.\n", consoleOutput.toString());
     }
 
     @Test
@@ -121,10 +115,8 @@ class HotelTest {
 
         releaseTheSystemOutput();
 
-        // Test will succeed if we get the proper failure console output
-        if (!(consoleOutput.toString().equals("nil, your reservation for a doubleroom has been successfully cancelled.\n"))) {
-            fail();
-        }
+        // Test will fail if the reservation is not successfully canceled
+        assertEquals("nil, your reservation for a doubleroom has been successfully cancelled.\n", consoleOutput.toString());
     }
 
     @Test
@@ -155,10 +147,9 @@ class HotelTest {
 
         releaseTheSystemOutput();
 
-        // Test will succeed if we get the proper failure console output
-        if (!(consoleOutput.toString().equals("nil, your reservation for a kingroom has been successfully cancelled.\n"))) {
-            fail();
-        }
+        // Test will fail if the reservation is not canceled
+        assertEquals("nil, your reservation for a kingroom has been successfully cancelled.\n", consoleOutput.toString());
+
     }
 
     @Test
@@ -176,10 +167,8 @@ class HotelTest {
 
         releaseTheSystemOutput();
 
-        // Test will succeed if we get the proper failure console output
-        if (!(consoleOutput.toString().equals("There is no reservation for a king room under the name of nil's clone.\n"))) {
-            fail();
-        }
+        // Test will fail if the method fails to notice that the requested reservaion does not exist
+        assertEquals("There is no reservation for a king room under the name of nil's clone.\n", consoleOutput.toString());
     }
 
     @Test
@@ -199,9 +188,8 @@ class HotelTest {
 
         releaseTheSystemOutput();
 
-        if (!(consoleOutput.toString().equals("nil's invoice is of $200.0\n"))) {
-            fail();
-        }
+        // Test will fail if the invoice is wrong
+        assertEquals("nil's invoice is of $200.0\n", consoleOutput.toString());
     }
 
     @Test
@@ -221,9 +209,9 @@ class HotelTest {
 
         releaseTheSystemOutput();
 
-        if (!(consoleOutput.toString().equals("nil's invoice is of $90.0\n"))) {
-            fail();
-        }
+        // Test will fail if the invoice is wrong or adds more than one person's bills
+        assertEquals("nil's invoice is of $90.0\n", consoleOutput.toString());
+
     }
 
     @Test
@@ -242,20 +230,16 @@ class HotelTest {
 
         releaseTheSystemOutput();
 
-        if (!(consoleOutput.toString().equals("Hotel name: the cute hotel\nAvailable Rooms: 3 double, 2 queen, 1 king.\n"))) {
-            fail();
-        }
+        // Test will fail if the output is wrong
+        assertEquals("Hotel name: the cute hotel\nAvailable Rooms: 3 double, 2 queen, 1 king.\n", consoleOutput.toString());
     }
 
 
     // These following two tests are for lines of code that (as far as I can tell) can't be reached through normal use of
-    // the code assigned to us, at least in the state it's in.
-    // There's no reason you'd actually want to do this in real life, but I
-    // wanted to see if it was possible because I had a lot of fun writing all the other tests.
-    //
+    // the code assigned to us, at least in the state it's in. This is honestly a silly solution, but I just wanted to see if
+    // it was possible to bypass Java's normal method access control.
     // Please let me know in the feedback if there is indeed a way to access lines 39 and 92
-    // in Hotel without doing these horrible things. I'm really curious as to if I missed something obvious
-
+    // in Hotel without doing this horror. I'm really curious if I missed something obvious
     @Test
     void addReservation_HotelWithOneReservation_ForbiddenOutput() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Room[] cuteRooms = {new Room("double")};
@@ -264,26 +248,22 @@ class HotelTest {
         // Make a reservation
         cuteHotel.createReservation("nil","double");
 
-        // This creates a method object tied to any method in a given class (Hotel.class) here.
-        // getDeclaredMethod lets you bypass Java's normal method access control since it's just
-        // reflecting the declared code in a class without technically accessing it in the normal way.
+        // Reflect the private method's code to a Method object that can be modified at runtime
         Method addReservation = Hotel.class.getDeclaredMethod("addReservation", Reservation.class);
 
-        // Sets the method instance to be accessible publicly.
+        // Set the above method to be public and accessible outside Hotel.class
         addReservation.setAccessible(true);
 
-        // Invokes the private method to try and create a new reservation.
-
+        // Tries to create a new reservation with the above weird modded method
         captureTheSystemOutput();
 
-            // Again, this should Never Ever happen
+            // Again, this shouuld probably never happen in normal execution
             addReservation.invoke(cuteHotel, new Reservation(cuteRooms[0], "why"));
 
         releaseTheSystemOutput();
 
-        if (!(consoleOutput.toString().equals("Sorry, all rooms are already reserved\n"))) {
-            fail();
-        }
+        // Fail if a room is successfully reserved anyway
+        assertEquals("Sorry, all rooms are already reserved\n", consoleOutput.toString());
     }
 
     // You can do the same thing with a field too
@@ -292,16 +272,16 @@ class HotelTest {
         Room[] cuteRooms = {new Room("double")};
         Hotel cuteHotel = new Hotel("the cute hotel", cuteRooms);
 
-        // Instantiates a reflection of numOfReservations in Hotel.class
+        // Instantiates a reflection of the numOfReservations field in Hotel.class
         Field numOfReservations = Hotel.class.getDeclaredField("numOfReservations");
 
-        // Makes the field accessible
+        // Makes the field public
         numOfReservations.setAccessible(true);
 
-        // Sets the number of reservations to some fake number that is too high
+        // Sets the number of reservations to some silly number that is way too high
         numOfReservations.set(cuteHotel, 1234);
 
-        // Try to create a reservation, the condition (numOfReservations < reservations.length) @ line 83 will fail
+        // Try to create a reservation, the condition (numOfReservations < reservations.length) @ line 83 in Hotel.class will fail
         captureTheSystemOutput();
 
             cuteHotel.createReservation("nil","double");
@@ -309,10 +289,7 @@ class HotelTest {
         releaseTheSystemOutput();
 
         // I broke it!
-        if (!(consoleOutput.toString().equals("There is an issue with the reservation system\n"))) {
-            fail();
-        }
+        assertEquals("There is an issue with the reservation system\n", consoleOutput.toString());
+
     }
-
-
 }
